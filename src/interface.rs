@@ -2,14 +2,29 @@ use bevy::prelude::*;
 use std::thread;
 
 use crate::sliderplugin;
-use crate::main_program;
+use crate::main_controller;
+
+#[derive(Component, Debug, Default, Clone)]
+pub struct StartButton;
+
+#[derive(Component, Debug, Default, Clone)]
+pub struct StopButton;
+
+pub const START_BUTTON_IDLE_COLOR: Color = Color::srgb(0.20, 0.35, 0.25);
+pub const START_BUTTON_PRESSED_COLOR: Color = Color::srgb(0.20*0.5, 0.35*0.5, 0.25*0.5);
+pub const START_BUTTON_HOVERED: Color = Color::srgb(0.20, 0.35*2., 0.25);
+
+pub const STOP_BUTTON_IDLE_COLOR: Color = Color::srgb(0.35, 0.20, 0.20);
+pub const STOP_BUTTON_PRESSED_COLOR: Color = Color::srgb(0.35*0.5, 0.20*0.5, 0.20*0.5);
+pub const STOP_BUTTON_HOVERED: Color = Color::srgb(0.35*2., 0.20, 0.20);
 
 pub fn setup_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    main_image_data: Res<main_program::MainImageData>
+    main_image_data: Res<main_controller::MainImageData>
 ) {
     let start_button = (
+        StartButton,
         Button,
         Node {
             width: Val::Percent(50.0),
@@ -21,7 +36,7 @@ pub fn setup_ui(
             ..default()
         },
         BorderRadius::percent(20., 20., 20., 20.),
-        BackgroundColor(Color::srgb(0.20, 0.35, 0.25)),
+        BackgroundColor(START_BUTTON_IDLE_COLOR),
         children![(
             Text::new("Start"),
             TextFont {
@@ -33,6 +48,7 @@ pub fn setup_ui(
         )]
     );
     let stop_button = (
+        StopButton,
         Button,
         Node {
             width: Val::Percent(50.0),
@@ -45,7 +61,7 @@ pub fn setup_ui(
         },
         BorderColor(Color::BLACK),
         BorderRadius::percent(20., 20., 20., 20.),
-        BackgroundColor(Color::srgb(0.35, 0.20, 0.20)),
+        BackgroundColor(STOP_BUTTON_IDLE_COLOR),
         children![(
             Text::new("Stop"),
             TextFont {
@@ -241,7 +257,7 @@ pub fn setup_sliders(
                                 TextColor(Color::srgb(0.8, 0.8, 0.8)),
                             )]
                         ),
-                        sliderplugin::FloatSlider::create(0.5, 2., 4.)
+                        sliderplugin::FloatSlider::create(3., 2., 4.)
                     ]
                 ));
             }
