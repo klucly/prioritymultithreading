@@ -257,7 +257,8 @@ pub fn setup_sliders(
                                 TextColor(Color::srgb(0.8, 0.8, 0.8)),
                             )]
                         ),
-                        sliderplugin::FloatSlider::create(3., 2., 4.)
+                        // sliderplugin::float_slider(0., -2., 2.)
+                        sliderplugin::discrete_slider(0., -2., 2., 1.)
                     ]
                 ));
             }

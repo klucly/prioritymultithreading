@@ -1,4 +1,4 @@
-// use bevy::window::PresentMode;
+use bevy::window::PresentMode;
 use bevy::{asset::RenderAssetUsages, prelude::*, render::render_resource::*};
 use bevy::asset::Assets;
 use std::cmp::Eq;
@@ -21,7 +21,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                // present_mode: PresentMode::Immediate,
+                present_mode: PresentMode::Immediate,
                 ..default()
             }),
             ..default()
@@ -121,6 +121,7 @@ fn start_button_controller(
         };
     }
 }
+
 fn stop_button_controller(
     main_controller: Res<MainController>,
     stop_button: Query<(&mut BackgroundColor, &Interaction), (Changed<Interaction>, With<interface::StopButton>)>,

@@ -130,8 +130,8 @@ impl Worker {
                 continue;
             }
             
-            for x in 0..image_data.width {
-                for y in 0..image_data.height {
+            for y in 0..image_data.height {
+                for x in 0..image_data.width {
                     let index = 4 * (x + y * image_data.width) as usize;
                     *img_ptr.add(index+0) = color.0;
                     *img_ptr.add(index+1) = color.1;
