@@ -9,12 +9,19 @@ mod interface;
 
 use main_controller::MainImageData;
 use crate::main_controller::MainController;
+use crate::sliderplugin::SliderWrapper;
 
 #[derive(States, Debug, Clone, Eq, PartialEq, Hash, Default)]
 enum ProgramState {
     #[default]
     Loading,
     Running
+}
+
+#[derive(Resource)]
+struct PrioritiesContainer {
+    priorities: Vec<i32>,
+    prev_priorities: Vec<i32>,
 }
 
 fn main() {
@@ -31,7 +38,7 @@ fn main() {
         .add_systems(Startup, (setup, interface::setup_ui.after(setup)))
         .add_systems(Update, finish_loading.run_if(in_state(ProgramState::Loading)))
         .add_systems(OnEnter(ProgramState::Running), (interface::setup_sliders, main_controller_init))
-        .add_systems(Update, (update, start_button_controller, stop_button_controller).run_if(in_state(ProgramState::Running)))
+        .add_systems(Update, (update, update_priorities, start_button_controller, stop_button_controller).run_if(in_state(ProgramState::Running)))
         .run();
 }
 
@@ -82,6 +89,21 @@ fn setup(
 
     let handle = server.add(image);
     commands.insert_resource(MainImageData::new(handle, width, height, 0));
+    commands.insert_resource(PrioritiesContainer {priorities: Vec::new(), prev_priorities: Vec::new()});
+}
+
+fn update_priorities(
+    mut priorities_container: ResMut<PrioritiesContainer>,
+    sliders: Query<&SliderWrapper, With<SliderWrapper>>,
+    controller: Res<MainController>,
+) {
+    let new_priorities = get_groups_priorities(sliders);
+    if new_priorities == priorities_container.priorities {return}
+
+    let prev_priorities = std::mem::replace(&mut priorities_container.priorities, new_priorities.clone());
+    priorities_container.prev_priorities = prev_priorities;
+
+    controller.update_priorities(new_priorities).expect("Couldn't update priorities");
 }
 
 fn update(
@@ -90,6 +112,15 @@ fn update(
 ) {
     // Get an image for bevy to update it on gpu
     images.get_mut(&main_image_data.handle()).expect("Image not found");
+
+}
+
+fn get_groups_priorities(
+    sliders: Query<&SliderWrapper, With<SliderWrapper>>,
+) -> Vec<i32> {
+    let mut values = Vec::new();
+    sliders.iter().for_each(|slider| values.push(slider.base().value.round() as i32));
+    values
 }
 
 fn main_controller_init(

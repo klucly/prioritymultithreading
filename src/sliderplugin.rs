@@ -30,7 +30,13 @@ pub enum SliderWrapper {
 }
 
 impl SliderWrapper {
-    fn base(&mut self) -> &mut Slider {
+    pub fn base(&self) -> &Slider {
+        match self {
+            SliderWrapper::FloatSlider { slider } => slider,
+            SliderWrapper::DiscreteSlider { slider, .. } => slider,
+        }
+    }
+    pub fn base_mut(&mut self) -> &mut Slider {
         match self {
             SliderWrapper::FloatSlider { slider } => slider,
             SliderWrapper::DiscreteSlider { slider, .. } => slider,
@@ -118,7 +124,7 @@ fn animate_sliders(
     mut slider_handles: Query<&mut Node, With<SliderHandle>>,
 ) {
     for (mut slider_wrapper, children) in sliders {
-        let slider = slider_wrapper.base();
+        let slider = slider_wrapper.base_mut();
 
         let mut slider_handle = slider_handles
             .get_mut(children[1])

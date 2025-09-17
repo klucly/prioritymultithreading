@@ -258,7 +258,7 @@ pub fn setup_sliders(
                             )]
                         ),
                         // sliderplugin::float_slider(0., -2., 2.)
-                        sliderplugin::discrete_slider(0., -2., 2., 1.)
+                        sliderplugin::discrete_slider(1., -2., 2., 1.)
                     ]
                 ));
             }

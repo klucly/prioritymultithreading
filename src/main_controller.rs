@@ -1,9 +1,13 @@
 use bevy::prelude::*;
+
 use std::sync::RwLock;
 use std::sync::Arc;
 use std::thread;
-use rand::Rng;
 use std::time::Duration;
+use std::sync::mpsc;
+
+use rand::Rng;
+use libc::{sched_param, sched_setscheduler, SCHED_FIFO, getpid, pid_t};
 
 
 #[derive(Resource, Clone)]
@@ -39,7 +43,7 @@ impl MainController {
         }
     }
     pub fn init(&mut self) {
-        (&mut self.groups).into_iter().for_each(|group| {group.init();});
+        (&mut self.groups).into_iter().for_each(|group| group.init());
     }
     pub fn start_all(&self) -> Result<(), std::sync::PoisonError<std::sync::RwLockWriteGuard<'_, WorkerStatus>>> {
         for group in &self.groups {
@@ -53,7 +57,23 @@ impl MainController {
         }
         Ok(())
     }
+    pub fn update_priorities(&self, priorities: Vec<i32>) -> Result<(), String> {
+        (&self.groups).iter().zip(priorities).try_for_each(|(group, priority)| group.set_priority(priority))?;
+        Ok(())
+    }
     
+}
+
+fn set_thread_priority(priority: i32, pid: pid_t) -> Result<(), String> {
+    unsafe {
+        let param = sched_param { sched_priority: priority };
+        let result = sched_setscheduler(pid, SCHED_FIFO, &param);
+        if result == -1 {
+            return Err(format!("Failed to set priority {} for a thread with pid: {}", priority, pid).to_string());
+        }
+        println!("Set priority {} for a thread with pid: {}", priority, pid);
+    }
+    Ok(())
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -93,29 +113,37 @@ impl WorkerGroup {
         *self.status.write()? = WorkerStatus::Idle;
         Ok(())
     }
+    pub fn set_priority(&self, priority: i32) -> Result<(), String>{
+        (&self.workers).iter().try_for_each(|worker| worker.set_priority(priority))?;
+        Ok(())
+    }
 }
 
 pub struct Worker {
     image_data: Arc<MainImageData>,
     status: Arc<RwLock<WorkerStatus>>,
     worker_thread: Option<thread::JoinHandle<()>>,
+    pid: i32
 }
 
 impl Worker {
     pub fn new(image_data: Arc<MainImageData>, status: Arc<RwLock<WorkerStatus>>) -> Worker {
-        Worker { image_data, status, worker_thread: None }
+        Worker { image_data, status, worker_thread: None, pid: 0 }
     }
 
     fn start(&mut self) {
         let image_data = self.image_data.clone();
         let status = self.status.clone();
         let color = random_color();
+        let (tx, rx) = mpsc::channel();
 
-        self.worker_thread = Some(thread::spawn(move || unsafe {Worker::handle(image_data, status, color);}));
+        self.worker_thread = Some(thread::spawn(move || unsafe {Worker::handle(tx, image_data, status, color);}));
+        self.pid = rx.recv().expect("Couldn't receive");
     }
 
-    unsafe fn handle(image_data: Arc<MainImageData>, status: Arc<RwLock<WorkerStatus>>, color: (u8, u8, u8, u8)) {
+    unsafe fn handle(tx: mpsc::Sender<i32>, image_data: Arc<MainImageData>, status: Arc<RwLock<WorkerStatus>>, color: (u8, u8, u8, u8)) {
         let img_ptr = image_data.data_ptr as *mut u8;
+        tx.send(getpid()).expect("Couldn't get pid of a thread");
         loop {
             let status_read_attempt = status.read();
             let status = match status_read_attempt {
@@ -140,6 +168,10 @@ impl Worker {
                 }
             }
         }
+    }
+    fn set_priority(&self, priority: i32) -> Result<(), String> {
+        set_thread_priority(priority, self.pid)?;
+        Ok(())
     }
 }
 
