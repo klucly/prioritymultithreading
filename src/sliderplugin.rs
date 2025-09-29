@@ -9,7 +9,7 @@ impl Plugin for SliderPlugin {
     fn build(&self, app: &mut App) {
         log::info!("SliderPlugin initialized");
         app
-            .insert_resource(SliderAnimationController::new(2., 1., 1.5))
+            .insert_resource(SliderAnimationController::new(1., 0.5, 1.5))
             .add_systems(Update, update_sliders)
             .add_systems(PreUpdate, animate_sliders);
     }

@@ -226,7 +226,7 @@ pub fn setup_sliders(
 
     for (entity, _slider) in query {
         commands.entity(entity).with_children(|slider_main| {
-            for slider_index in 0..threads/4 {
+            for slider_index in 0..3 {
                 slider_main.spawn((
                     Node {
                         height: Val::Px(100.),

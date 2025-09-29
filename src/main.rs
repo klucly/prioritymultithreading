@@ -38,7 +38,8 @@ fn main() {
         .add_systems(Startup, (setup, interface::setup_ui.after(setup)))
         .add_systems(Update, finish_loading.run_if(in_state(ProgramState::Loading)))
         .add_systems(OnEnter(ProgramState::Running), (interface::setup_sliders, main_controller_init))
-        .add_systems(Update, (update, update_priorities, start_button_controller, stop_button_controller).run_if(in_state(ProgramState::Running)))
+        .add_systems(Update, (update, update_priorities, start_button_controller, stop_button_controller)
+            .run_if(in_state(ProgramState::Running)))
         .run();
 }
 
@@ -82,13 +83,13 @@ fn setup(
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
-        &[128, 0, 0, 255],
+        &[0, 0, 0, 255],
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD
     );
 
     let handle = server.add(image);
-    commands.insert_resource(MainImageData::new(handle, width, height, 0));
+    commands.insert_resource(MainImageData::new(handle, width as i32, height as i32, 0));
     commands.insert_resource(PrioritiesContainer {priorities: Vec::new(), prev_priorities: Vec::new()});
 }
 
@@ -127,7 +128,7 @@ fn main_controller_init(
     mut commands: Commands,
     image_data: Res<MainImageData>,
 ) {
-    let mut main_controller = MainController::new(&image_data, 1);
+    let mut main_controller = MainController::new(&image_data, 3);
     main_controller.init();
 
     commands.insert_resource(main_controller);
